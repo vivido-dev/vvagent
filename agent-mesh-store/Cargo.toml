@@ -1,0 +1,19 @@
+[package]
+name = "agent-mesh-store"
+description = "Durable SQLite mailbox for the agent mesh"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+agent-mesh-core.workspace = true
+rusqlite.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+getrandom.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading"] }

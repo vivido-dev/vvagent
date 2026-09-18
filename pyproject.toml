@@ -1,0 +1,43 @@
+[build-system]
+requires = ["maturin>=1.9.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "vvagent"
+version = "0.1.0"
+description = "Typed Python bindings for the agent mesh mailbox"
+readme = "README-python.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [{ name = "Wensheng Wang", email = "wenshengwang@gmail.com" }]
+keywords = ["agents", "terminal", "messaging"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Rust",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Repository = "https://github.com/vivido-dev/vvagent"
+
+[project.optional-dependencies]
+test = ["mypy>=1.8,<2", "pytest>=7.4"]
+
+[tool.maturin]
+manifest-path = "python-bindings/Cargo.toml"
+python-source = "python"
+module-name = "vvagent._native"
+bindings = "pyo3"
+
+[tool.pytest.ini_options]
+testpaths = ["python-tests"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+files = ["python/vvagent", "python-tests"]
+
+[[tool.mypy.overrides]]
+module = ["pytest", "pytest.*"]
+follow_imports = "skip"

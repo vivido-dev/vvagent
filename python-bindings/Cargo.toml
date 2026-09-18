@@ -1,0 +1,24 @@
+[package]
+name = "agent-mesh-python"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+description = "Private PyO3 extension for the vvagent Python package"
+repository = "https://github.com/vivido-dev/vvagent"
+publish = false
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+test = false
+doctest = false
+
+[dependencies]
+agent-mesh-core = { workspace = true }
+agent-mesh-store = { workspace = true }
+pyo3 = { version = "0.29", features = ["abi3-py39", "extension-module"] }
+serde_json = { workspace = true }
+
+[build-dependencies]
+pyo3-build-config = "0.29"

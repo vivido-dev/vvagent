@@ -1,0 +1,15 @@
+[package]
+name = "agent-mesh-core"
+description = "Wire types, bounds, identity, selectors, and policy for the agent mesh"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+getrandom.workspace = true

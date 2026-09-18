@@ -1,0 +1,22 @@
+[package]
+name = "vvagent"
+description = "Agent mesh CLI: address, message, and answer agents across terminal runtimes"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+agent-mesh-core.workspace = true
+agent-mesh-store.workspace = true
+clap.workspace = true
+sha2.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+# The M2.5 schema assertion reads the real database rather than trusting the code that wrote it.
+rusqlite.workspace = true

@@ -1,0 +1,12 @@
+target/
+
+# The compiled PyO3 extension. The package ships from python/; this is a build artifact that lands
+# beside the sources so the tests can import it without an install.
+*.so
+
+# Python build and cache artifacts.
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.venv/
