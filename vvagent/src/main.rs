@@ -85,6 +85,10 @@ enum Command {
         /// An endpoint id, `runtime:instance/alias`, or a bare alias.
         #[arg(long, conflicts_with = "group", required_unless_present = "group")]
         to: Option<String>,
+        /// Peer host when addressing an agent on a remote host (e.g. `--peer 9600x --to builder`).
+        /// Avoids PowerShell splatting with `@host:alias`.
+        #[arg(long)]
+        peer: Option<String>,
         /// Fan out to every member of a group. Each member gets its own message and its own
         /// outcome; a group send is never reported as one atomic result.
         #[arg(long)]
@@ -544,6 +548,7 @@ fn run(cli: Cli) -> agent_mesh_core::Result<std::process::ExitCode> {
         }
         Command::Send {
             to,
+            peer,
             group,
             subject,
             text,
@@ -637,7 +642,20 @@ fn run(cli: Cli) -> agent_mesh_core::Result<std::process::ExitCode> {
                 }
                 None => {
                     let to = to.expect("clap requires --to without --group");
-                    let target = resolve_selector(&mut store, &to, &caller)?;
+                    let destination = match peer.as_deref() {
+                        Some(p) => {
+                            if to.starts_with('@')
+                                || to.starts_with("agent://")
+                                || to.starts_with("peer:")
+                            {
+                                to
+                            } else {
+                                format!("@{p}:{to}")
+                            }
+                        }
+                        None => to,
+                    };
+                    let target = resolve_selector(&mut store, &destination, &caller)?;
                     let attached = attach::attach(
                         &mut store,
                         &caller,

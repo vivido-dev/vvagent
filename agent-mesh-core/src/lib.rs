@@ -545,7 +545,41 @@ impl RemoteSelector {
                     bridge::MAX_SELECTOR_BYTES
                 )));
             }
-            if selector.starts_with('@') || selector.starts_with("agent://") {
+            if selector.starts_with('@')
+                || selector.starts_with("agent://")
+                || selector.starts_with("peer:")
+            {
+                return Err(invalid(
+                    "a peer resolves only its own agents; mail is never routed through it",
+                ));
+            }
+            return Ok(Some(Self::Named {
+                peer,
+                selector: selector.to_owned(),
+            }));
+        }
+        if let Some(rest) = value.strip_prefix("peer:") {
+            let (peer, selector) = rest.split_once([':', '/']).ok_or_else(|| {
+                invalid("a peer selector is `peer:<peer>:<selector>` or `peer:<peer>/<selector>`")
+            })?;
+            let peer = PeerLabel::parse(peer)?;
+            let selector = selector.strip_prefix("agent://local/").unwrap_or(selector);
+            if let Ok(endpoint_id) = Opaque::parse(selector) {
+                return Ok(Some(Self::Exact { peer, endpoint_id }));
+            }
+            if selector.is_empty()
+                || selector.len() > bridge::MAX_SELECTOR_BYTES
+                || selector.chars().any(char::is_control)
+            {
+                return Err(invalid(format!(
+                    "the selector after `peer:{peer}:` is 1..={} bytes with no control characters",
+                    bridge::MAX_SELECTOR_BYTES
+                )));
+            }
+            if selector.starts_with('@')
+                || selector.starts_with("agent://")
+                || selector.starts_with("peer:")
+            {
                 return Err(invalid(
                     "a peer resolves only its own agents; mail is never routed through it",
                 ));
@@ -2088,6 +2122,9 @@ mod tests {
             format!("agent://buildbox/{id}"),
             format!("@buildbox:{id}"),
             format!("@buildbox:agent://local/{id}"),
+            format!("peer:buildbox:{id}"),
+            format!("peer:buildbox/{id}"),
+            format!("peer:buildbox:agent://local/{id}"),
         ] {
             assert_eq!(
                 RemoteSelector::parse(&form).unwrap(),
@@ -2097,6 +2134,20 @@ mod tests {
         }
         assert_eq!(
             RemoteSelector::parse("@build.example.com:vvmux:dev/f1p2").unwrap(),
+            Some(RemoteSelector::Named {
+                peer: PeerLabel::parse("build.example.com").unwrap(),
+                selector: "vvmux:dev/f1p2".into(),
+            })
+        );
+        assert_eq!(
+            RemoteSelector::parse("peer:build.example.com:vvmux:dev/f1p2").unwrap(),
+            Some(RemoteSelector::Named {
+                peer: PeerLabel::parse("build.example.com").unwrap(),
+                selector: "vvmux:dev/f1p2".into(),
+            })
+        );
+        assert_eq!(
+            RemoteSelector::parse("peer:build.example.com/vvmux:dev/f1p2").unwrap(),
             Some(RemoteSelector::Named {
                 peer: PeerLabel::parse("build.example.com").unwrap(),
                 selector: "vvmux:dev/f1p2".into(),
@@ -2136,9 +2187,18 @@ mod tests {
             "@buildbox:".into(),
             "@Buildbox:builder".into(),
             "@buildbox:@other:builder".into(),
+            "@buildbox:peer:other:builder".into(),
             "@buildbox:agent://other/0123456789abcdef0123456789abcdef".into(),
             format!("@buildbox:{}", "p".repeat(bridge::MAX_SELECTOR_BYTES + 1)),
             "agent://buildbox/not-an-id".into(),
+            "peer:buildbox".into(),
+            "peer:buildbox:".into(),
+            "peer:buildbox:@other:builder".into(),
+            "peer:buildbox:peer:other:builder".into(),
+            format!(
+                "peer:buildbox:{}",
+                "p".repeat(bridge::MAX_SELECTOR_BYTES + 1)
+            ),
         ] {
             assert!(RemoteSelector::parse(&bad).is_err(), "{bad}");
         }
