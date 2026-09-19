@@ -1,0 +1,5 @@
+[env]
+# This extension targets Python's stable ABI and does not need a build-host
+# interpreter. Avoid deriving incompatible linker settings from one that happens
+# to be on PATH (for example, an MSYS2 Python during an MSVC build).
+PYO3_NO_PYTHON = "1"

@@ -651,15 +651,27 @@ fn a_reference_says_which_host_its_file_is_on() {
         bytes: None,
         host: None,
     };
+    #[cfg(unix)]
+    let (peer_path, staged_path, result_path) = (
+        "C:\\build\\out.log",
+        "/tmp/staged.bin",
+        "/home/u/result.txt",
+    );
+    #[cfg(windows)]
+    let (peer_path, staged_path, result_path) = (
+        "/build/out.log",
+        "C:\\tmp\\staged.bin",
+        "C:\\home\\u\\result.txt",
+    );
     let mut deliver = delivery(&Opaque::generate(), &local.endpoint_id, Kind::Request);
     deliver.refs = vec![
         WireRef {
             on: RefHost::Sender,
-            reference: file("C:\\build\\out.log"),
+            reference: file(peer_path),
         },
         WireRef {
             on: RefHost::Recipient,
-            reference: file("/tmp/staged.bin"),
+            reference: file(staged_path),
         },
     ];
     let landed = store.ingest(&peer, &owner, &deliver).unwrap();
@@ -667,14 +679,14 @@ fn a_reference_says_which_host_its_file_is_on() {
         landed.refs,
         vec![
             Ref::File {
-                path: "C:\\build\\out.log".into(),
+                path: peer_path.into(),
                 sha256: None,
                 bytes: None,
                 host: Some(peer.clone()),
             },
-            file("/tmp/staged.bin"),
+            file(staged_path),
         ],
-        "a Windows path on the peer is kept, and marked as the peer's"
+        "a foreign path on the peer is kept, and marked as the peer's"
     );
 
     // A path the peer says is on *this* host is held to this host's rules when it lands.
@@ -697,7 +709,7 @@ fn a_reference_says_which_host_its_file_is_on() {
         .ensure_proxy(&peer, &Opaque::generate(), None)
         .unwrap();
     let mut reply = draft(&proxy, Kind::Request, "out");
-    reply.refs = vec![landed.refs[0].clone(), file("/home/u/result.txt")];
+    reply.refs = vec![landed.refs[0].clone(), file(result_path)];
     let queued = store.send(&me, &reply).unwrap();
     let outbound = store
         .outbound(&store.proxy(&proxy).unwrap(), &queued, now_ms())
