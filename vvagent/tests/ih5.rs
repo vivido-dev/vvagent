@@ -33,6 +33,9 @@ impl Scratch {
         ));
         std::fs::create_dir_all(base.join("remote-bin")).unwrap();
         std::fs::create_dir_all(base.join("empty-bin")).unwrap();
+        // The far side's home: empty, so the remote command's login-shell fallback sources no
+        // profile from *this* machine and finds only what the test put on the far PATH.
+        std::fs::create_dir_all(base.join("home")).unwrap();
         let scratch = Self(base);
         scratch.script(
             "ssh",
@@ -111,8 +114,9 @@ fn lane(scratch: &Scratch, destination: &str, remote_path: &Path) -> Command {
         .args(["-T", "-o", "ControlMaster=no", "-o", "ControlPath=none"])
         .arg(destination)
         .arg(REMOTE_COMMAND)
-        // The remote side's environment: its PATH, and a login shell that adds nothing.
+        // The remote side's environment: its PATH, home, and a login shell that adds nothing.
         .env("PATH", format!("{}:/usr/bin:/bin", remote_path.display()))
+        .env("HOME", scratch.0.join("home"))
         .env("SHELL", "/bin/sh")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
