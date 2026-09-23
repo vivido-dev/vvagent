@@ -43,6 +43,13 @@ impl Scratch {
             // sshd would: through a shell.
             "#!/bin/sh\nfor last; do :; done\nexec /bin/sh -c \"$last\"\n",
         );
+        scratch.script(
+            "login-shell",
+            // The far side's login shell. `/bin/sh -l` is not neutral: on macOS it reads
+            // `/etc/profile`, whose `path_helper` puts `/usr/local/bin` on PATH and would find a
+            // `vvagent` installed on this machine. This one takes the same `-lc` and adds nothing.
+            "#!/bin/sh\n[ \"$1\" = -lc ] || exit 64\nexec /bin/sh -c \"$2\"\n",
+        );
         scratch
     }
 
@@ -117,7 +124,7 @@ fn lane(scratch: &Scratch, destination: &str, remote_path: &Path) -> Command {
         // The remote side's environment: its PATH, home, and a login shell that adds nothing.
         .env("PATH", format!("{}:/usr/bin:/bin", remote_path.display()))
         .env("HOME", scratch.0.join("home"))
-        .env("SHELL", "/bin/sh")
+        .env("SHELL", scratch.0.join("login-shell"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
